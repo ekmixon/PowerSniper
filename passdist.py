@@ -37,56 +37,40 @@ parser.set_defaults(output='analysis.csv',min=7,max=12,complex=0)
 # Stick arguments in a variable
 args = vars(parser.parse_args())
 
-# Open file with complex passwords
-wordlist = open(args['wordlist'])
+with open(args['wordlist']) as wordlist:
+  with open(args['toplist']) as toplist:
+    # Open output file
+    output = open(args['output'], 'w')
 
-# Open file with top passwords
-toplist = open(args['toplist'])
+    # Write CSV header
+    output.write('Top Password,Complex Password,Diff\n')
 
-# Open output file
-output = open(args['output'], 'w')
+    # Generate a dict of top rockyou passwords
+    toppasswords = [topword.rstrip("\n\r") for topword in toplist]
+  # Generate a dict of rockyou complex passwords
+  comppasswords = []
+  for compword in wordlist:
+    # Add to comppasswords dict and remove newlines
+    #comppasswords.append(compword.rstrip("\n\r"))
 
-# Write CSV header
-output.write('Top Password,Complex Password,Diff\n')
+    # Remove new lines
+    compword = compword.rstrip("\n\r")
 
-# Generate a dict of top rockyou passwords
-toppasswords = []
-for topword in toplist.readlines():
+    # Check the size of the password, only add if within range
+    if len(compword) >= int(args['passmin']) and len(compword) <= int(args['passmax']):
 
-  # Add to toppasswords dict and remove newlines
-  toppasswords.append(topword.rstrip("\n\r"))
+      # Check whether we are only keeping complex passwords
+      if args['complex'] == 1:
 
-# Close the list of top passwords as it is no longer needed
-toplist.close()
+        # Compare password to complexity rules of upper and lowercase, numbers, and special characters
+        if re.search('[a-z]', compword) and re.search('[A-Z]', compword) and re.search('[0-9]', compword) and re.search("[!@#$%^&*().?/:;<>,\`~\-_+='{}\"\[|]", compword):
 
-# Generate a dict of rockyou complex passwords
-comppasswords = []
-for compword in wordlist.readlines():
+          # Add to comppasswords dict if the password is within the range and complex
+          comppasswords.append(compword)
+      else:
 
-  # Add to comppasswords dict and remove newlines
-  #comppasswords.append(compword.rstrip("\n\r"))
-
-  # Remove new lines
-  compword = compword.rstrip("\n\r")
-
-  # Check the size of the password, only add if within range
-  if len(compword) >= int(args['passmin']) and len(compword) <= int(args['passmax']):
-
-    # Check whether we are only keeping complex passwords
-    if args['complex'] == 1:
-
-      # Compare password to complexity rules of upper and lowercase, numbers, and special characters
-      if re.search('[a-z]', compword) and re.search('[A-Z]', compword) and re.search('[0-9]', compword) and re.search("[!@#$%^&*().?/:;<>,\`~\-_+='{}\"\[|]", compword):
-
-        # Add to comppasswords dict if the password is within the range and complex
+        # Add to comppasswords if within the range and we don't care about complexity
         comppasswords.append(compword)
-    else:
-
-      # Add to comppasswords if within the range and we don't care about complexity
-      comppasswords.append(compword)
-
-# Close the password list as it is no longer needed
-wordlist.close()
 
 # Loop through the top rockyou passwords
 for topword in toppasswords:
